@@ -1,0 +1,225 @@
+const InsiderAppEvents = {
+	Listing: 'listing',
+	Product: 'product',
+	Cart: 'cart',
+	Purchase: 'purchase'
+}
+
+const InsiderPageTypes = {
+	Home: 'Home',
+	Product: 'Product',
+	Category: 'Category',
+	Search: 'Search',
+	Basket: 'Basket',
+	Checkout: 'Checkout',
+	Confirmation: 'Confirmation'
+}
+
+class EventsTrackingWrapper {
+
+	isWebview = false;
+	rechargesBasket = {};
+	storeBasket = {};
+
+	constructor() {
+		this.initInsider();
+		this.initObjects();
+		this.checkWebview();
+	}
+
+	initInsider() {
+		window.insider_object = window.insider_object || {};
+	}
+
+	initObjects() {
+		window.insider_object = {
+			page: {},
+			user: {},
+			listing: {
+				items: []
+			},
+			product: {},
+			basket: {
+				line_items: [],
+				total: 0,
+				shipping_cost: 0
+			},
+			transaction: {}
+		};
+	}
+
+	checkWebview() {
+		this.isWebview = !!((window.Android && typeof window.Android.sendInsiderEvent === 'function')
+			|| (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.insiderHandler));
+	}
+
+	setPageObject(page) {
+		window.insider_object.page = {
+			type: page
+		};
+		this.reinitializeTag();
+	}
+
+	setUserObject(user) {
+		window.insider_object.user = user;
+
+		Moengage.identifyUser(user.uuid).then(() => {
+			Moengage.add_first_name(user.name);
+			Moengage.add_last_name(user.surname);
+			Moengage.add_email(user.email);
+			Moengage.add_mobile(user.phone_number);
+			Moengage.add_user_name(user.name + ' ' + user.surname);
+			Moengage.add_gender(user.gender);
+			Moengage.add_birthday(new Date(user.birthday));
+
+			// Send custom attributes
+			for (const [key, value] of Object.entries(user.custom)) {
+				Moengage.add_user_attribute(key, this.castAttribute(value));
+			}
+		});
+
+		this.reinitializeTag();
+	}
+
+	setListingObject(items) {
+		// Try to send event to app
+		if (this.sendAppEvent(InsiderAppEvents.Listing, items)) return;
+
+		window.addEventListener('load', function() {
+
+			// Moengage.track_event("listing_event", {
+			// 	"quantity":2,
+			// 	"product_name":"Ipad mini",
+			// 	"price": 599.99,
+			// 	"currency": "USD"
+			// });
+		});
+
+		window.insider_object.listing = {
+			items: items
+		}
+
+		this.reinitializeTag();
+	}
+
+	addListingObject(items) {
+		// Try to send event to app
+		if (this.sendAppEvent(InsiderAppEvents.Listing, items)) return;
+
+		window.insider_object.listing.items = window.insider_object.listing.items.concat(items);
+		this.reinitializeTag();
+	}
+
+	setProductObject(product) {
+		// Try to send event to app
+		if (this.sendAppEvent(InsiderAppEvents.Product, product)) return;
+
+		Moengage.track_event("VIEW_PRODUCT", this.castAttributes(product));
+
+		window.insider_object.product = product;
+		this.reinitializeTag();
+	}
+
+	setBasketObject(basket) {
+		// Try to send event to app
+		if (this.sendAppEvent(InsiderAppEvents.Cart, basket)) return;
+
+		Moengage.track_event("VIEW_BASKET", this.castAttributes(basket));
+
+		window.insider_object.basket = basket;
+		this.reinitializeTag();
+	}
+
+	addRechargesBasketObject(basket) {
+		this.rechargesBasket = basket;
+		this.unifyBasketObjects();
+	}
+
+	addStoreBasketObject(basket) {
+		this.storeBasket = basket;
+		this.unifyBasketObjects();
+	}
+
+	unifyBasketObjects() {
+		// Reinitialize basket
+		let basket = {
+			line_items: [],
+			total: 0,
+			shipping_cost: 0
+		};
+
+		// Si tenemos el basket de recharges lo añadimos al basket
+		if (this.rechargesBasket.line_items) {
+			basket.line_items = basket.line_items.concat(this.rechargesBasket.line_items);
+			basket.total += this.rechargesBasket.total;
+			basket.shipping_cost += this.rechargesBasket.shipping_cost;
+		}
+
+		// Si tenemos el basket de store lo añadimos al basket
+		if (this.storeBasket.line_items) {
+			basket.line_items = basket.line_items.concat(this.storeBasket.line_items);
+			basket.total += this.storeBasket.total;
+			basket.shipping_cost += this.storeBasket.shipping_cost;
+		}
+
+		this.setBasketObject(basket);
+	}
+
+	setTransactionObject(transaction) {
+		// Try to send event to app
+		if (this.sendAppEvent(InsiderAppEvents.Purchase, transaction)) return;
+
+		Moengage.track_event("TRANSACTION", this.castAttributes(transaction));
+
+		window.insider_object.transaction = transaction;
+		this.reinitializeTag();
+	}
+
+	castAttributes(attributes) {
+		let castedAttributes = {};
+
+		for (const [key, value] of Object.entries(attributes)) {
+			castedAttributes[key] = this.castAttribute(value);
+		}
+
+		return castedAttributes;
+	}
+
+	castAttribute(attribute) {
+		let castedAttribute;
+
+		// If it's a date, cast it to Date object
+		if (typeof attribute === 'string' && attribute.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+			castedAttribute = new Date(attribute);
+		}
+		else castedAttribute = attribute;
+
+		return castedAttribute;
+	}
+
+	reinitializeTag() {
+		return;
+		// If Insider is not defined, do not reinitialize
+		if (typeof Insider !== 'undefined') {
+			Insider.eventManager.dispatch('init-manager:re-initialize');
+		}
+	}
+
+	sendAppEvent(event, data) {
+		if ( ! this.isWebview) return false;
+
+		const transaction = JSON.stringify({ event: event, data: data });
+
+		// En WebView de Android
+		if (window.Android && typeof window.Android.sendInsiderEvent === 'function') {
+			alert("Sending event to Android WebView");
+			window.Android.sendInsiderEvent(transaction);
+		}
+		// En WebView de iOS
+		else if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.insiderHandler)
+			window.webkit.messageHandlers.insiderHandler.postMessage(transaction);
+		else return false;
+
+		return true;
+	}
+}
