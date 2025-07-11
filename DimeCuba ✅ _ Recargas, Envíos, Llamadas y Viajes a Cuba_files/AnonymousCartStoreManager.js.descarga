@@ -1,0 +1,226 @@
+class AnonymousCartStoreManager {
+
+    ANONYMOUS_CART_STORE = 'anonymous-cart-store';
+
+    /**
+     * Construct Anonymous Cart.
+     */
+    constructor() {
+        let cart = JSON.parse(this.getAnonymousCart());
+
+        if(cart == null || !cart) {
+             cart = {
+                "products": [
+                    ],
+                "totals": 0,
+                "totalsReal" : 0,
+                "qty": 0,
+                "provinceId": "",
+                "cityId": ""
+            }
+        }
+        this.setAnonymousCart(cart);
+    }
+
+    /**
+     * Set Anonymous Cart
+     * @param cart
+     */
+    setAnonymousCart(cart) {
+        localStorage.setItem(this.ANONYMOUS_CART_STORE, JSON.stringify(cart));
+    }
+
+    /**
+     * Get Anonymous Cart
+     * @returns {string}
+     */
+    getAnonymousCart() {
+        return localStorage.getItem(this.ANONYMOUS_CART_STORE);
+    }
+
+    /**
+     * Remove Anonymous Cart
+     */
+    removeAnonymousCart() {
+        localStorage.removeItem(this.ANONYMOUS_CART_STORE);
+    }
+
+    /**
+     * Insert Item to Anonymous Cart
+     * @param product
+     */
+    insertProduct(product)
+    {
+        let aCartStore = JSON.parse(this.getAnonymousCart());
+
+        let params = {
+            "quantity" : product.quantity,
+            "productId" : product.productId,
+            "products" : JSON.stringify(aCartStore.products),
+            "provinceId" : aCartStore.provinceId,
+            "cityId" : aCartStore.cityId,
+        }
+
+        let productId = product.productId;
+        let cartManager = this;
+
+        sendRequestAsync("getProductsInfoAsync",params, true).then((msg) => {
+            if (msg.status == 1)//all ok
+            {
+                aCartStore.provinceId = msg.items.provinceId;
+                aCartStore.cityId = msg.items.cityId;
+                aCartStore.products = msg.items.products;
+                aCartStore.qty = msg.items.qty;
+                aCartStore.totals = msg.items.totalsPrice;
+                aCartStore.totalsReal = msg.items.totals;
+
+                if (msg.items.totalPriceProduct > msg.items.totalRealPriceProduct) {
+                    $(".price-c-" + productId).html("$" + parseFloat(msg.items.totalRealPriceProduct).toFixed(2));
+                    $(".price-o-" + productId).html("$" + parseFloat(msg.items.totalPriceProduct).toFixed(2));
+                } else
+                    $(".price-c-" + productId).html("$" + parseFloat(msg.items.totalRealPriceProduct).toFixed(2));
+
+                cartManager.setAnonymousCart(aCartStore);
+                cartManager.renderHtmlCart();
+
+            } else//Something wrong happen.
+            {
+                flashMessage(msg.message, 'error');
+                event.stopPropagation();
+            }
+        });
+
+        /*loadAsync(params, "getProductsInfoAsync", function (msg) {
+            if (msg.status == 1)//all ok
+            {
+                aCartStore.provinceId = msg.items.provinceId;
+                aCartStore.cityId = msg.items.cityId;
+                aCartStore.products = msg.items.products;
+                aCartStore.qty = msg.items.qty;
+                aCartStore.totals = msg.items.totalsPrice;
+                aCartStore.totalsReal = msg.items.totals;
+
+                if (msg.items.totalPriceProduct > msg.items.totalRealPriceProduct) {
+                    $(".price-c-" + productId).html("$" + parseFloat(msg.items.totalRealPriceProduct).toFixed(2));
+                    $(".price-o-" + productId).html("$" + parseFloat(msg.items.totalPriceProduct).toFixed(2));
+                } else
+                    $(".price-c-" + productId).html("$" + parseFloat(msg.items.totalRealPriceProduct).toFixed(2));
+
+                cartManager.setAnonymousCart(aCartStore);
+                cartManager.renderHtmlCart();
+
+            } else//Something wrong happen.
+            {
+                flashMessage(msg.message, 'error');
+                event.stopPropagation();
+            }
+        }, true);*/
+    }
+
+    /**
+     * Delete Item from Anonymous Cart.
+     * @param productId
+     */
+    deleteProduct(productId)
+    {
+        let cartManager = this;
+        let cart = JSON.parse(localStorage.getItem(this.ANONYMOUS_CART_STORE));
+
+        if(cart.products[productId]) {
+            let deleteProduct = cart.products[productId];
+            delete cart.products[productId];
+            cart.qty -= parseFloat(deleteProduct.quantity);
+            cart.totals -= parseFloat(deleteProduct.quantity) * parseFloat(deleteProduct.price);
+            cart.totalsReal -= parseFloat(deleteProduct.quantity) * parseFloat(deleteProduct.realPrice)
+
+        }
+        cartManager.setAnonymousCart(cart);
+        this.renderHtmlCart();
+    }
+
+    /*Checkout anonymous cart*/
+    checkoutAnonymousStoreShoppingCart(){
+        if ( isUserLogged) {
+            //get anonymous cart data.
+            let aCartStore = JSON.parse(this.getAnonymousCart());
+
+            //if it is defined
+            if (aCartStore && typeof aCartStore != "undefined" && aCartStore.provinceId != "" && aCartStore.cityId != "" && Object.keys(aCartStore.products).length > 0) {
+                let params = {
+                    "products": JSON.stringify(aCartStore.products),
+                    "provinceId": aCartStore.provinceId,
+                    "cityId": aCartStore.cityId,
+                }
+                let cartManager = this;
+                sendRequestAsync("checkoutAnonymousCartAsync", params, false).then((msg) => {
+                    if (msg.status == 1)//all ok
+                    {
+                        $("#cityLocation").html('<i class="fdc fdc-ubicacion font-size-35"></i><span class="location-back">' + msg.items.municipality.city + '<i class="fdc fdc-flechaabajo03 flecha-a"></i></span></a>');
+                        cartManager.removeAnonymousCart();//remove anonymous cart if all ok.
+                    }
+                    else//Something wrong happen.
+                    {
+                        flashMessage(msg.message, 'error');
+                        event.stopPropagation();
+                    }
+                });
+            }
+        }
+    }
+
+    /**
+     * Render Html Anonymous Cart.
+     */
+    renderHtmlCart()
+    {
+        let cart = JSON.parse(localStorage.getItem(this.ANONYMOUS_CART_STORE));
+
+        $(".store-r-p-price-o.total-cart").html("$" + parseFloat(cart.totals).toFixed(2));
+        $(".store-r-p-price-c.color-green.total-cart").html("$" + parseFloat(cart.totalsReal).toFixed(2));
+        $("a.store-r-collapse span").html('(' + cart.qty + ')' + '<i class="fdc fdc-flechaabajo03"></i>');
+
+        if (Object.keys(cart.products).length) {
+            // Crear una nueva instancia de Basket para los productos de la tienda
+            const storeBasket = new Basket(
+                "store-anonymous",
+                "Envíos para Cuba",
+                "fdc-tiendaonline",
+                cart.qty,
+                parseFloat(cart.totalsReal).toFixed(2),
+                cart.totals > cart.totalsReal ? parseFloat(cart.totals).toFixed(2) : 0,
+                0,
+                "/envios",
+                "goToStoreResumeView",
+            );
+
+            // Añadir productos de la tienda como items del carrito
+            $.each(cart.products, function(i, val) {
+                const item = new BasketItem(
+                    "",
+                    val.title,
+                    val.quantity,
+                    `$${parseFloat(val.realPrice * val.quantity).toFixed(2)}`,
+                    val.price > val.realPrice ? `$${parseFloat(val.price * val.quantity).toFixed(2)}` : "",
+                    `/envios/producto/${val.shortCode}`,
+                    "removeFromStoreShoppingCart",
+                    [val.productId]
+                );
+                storeBasket.addItem(item);
+            });
+
+            basketsManager.addBasket(storeBasket);
+        }
+        else basketsManager.removeBasket("store-anonymous");
+    }
+}
+
+function goToStoreResumeView() {
+    if (! isUserLogged)
+    {
+        directRedirection = '/envios/paymentresume';
+        logClick = true;
+        $('#modal-login').modal('show');
+        return false;
+    }
+    return false;
+}

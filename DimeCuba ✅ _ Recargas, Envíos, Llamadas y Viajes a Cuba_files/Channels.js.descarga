@@ -1,0 +1,40 @@
+class Channels {
+    constructor(name) {
+        this.name = name;
+    }
+
+    post(payload) {
+        const channel = window[this.name];
+
+        if (channel && typeof channel.postMessage === 'function') {
+            channel.postMessage(JSON.stringify(payload));
+            return true;
+        }
+
+        return false;
+    }
+}
+
+class AppChannel extends Channels {
+    constructor() {
+        super('AppChannel');
+    }
+
+    basketsUpdated(items = {}) {
+        return this.post({ event: 'baskets_updated', data: items });
+    }
+
+    purchaseCompleted(items = {}) {
+        return this.post({ event: 'purchase_completed', data: items });
+    }
+}
+
+class AnalyticsChannel extends Channels {
+    constructor() {
+        super('AnalyticsChannel');
+    }
+
+    logEvent(event, data = {}) {
+        return this.post({ event: event, data: data });
+    }
+}
