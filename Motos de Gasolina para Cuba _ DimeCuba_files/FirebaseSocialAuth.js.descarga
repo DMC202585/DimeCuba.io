@@ -1,0 +1,114 @@
+// Initialize Firebase
+if ( ! firebase.apps.length) {
+    firebase.initializeApp({
+        apiKey: "AIzaSyAQEd7vqjrsiT4V_ZU33mkA17guWKeqAgw",
+        authDomain: "dimecuba-flamingo.firebaseapp.com",
+        databaseURL: "https://dimecuba-flamingo.firebaseio.com",
+        projectId: "dimecuba-flamingo",
+        storageBucket: "dimecuba-flamingo.appspot.com",
+        messagingSenderId: "183759486506",
+        appId: "1:183759486506:web:827328147d2acbe9984d53"
+    });
+}
+
+class FirebaseSocialAuth {
+
+    constructor() {}
+
+    getProvider(providerId) {
+
+        let provider = providerId.split(".")[0];
+
+        if (provider === 'google') return new firebase.auth.GoogleAuthProvider();
+        if (provider === 'apple') return new firebase.auth.OAuthProvider('apple.com');
+        if (provider === 'facebook') return new firebase.auth.FacebookAuthProvider();
+
+        return null;
+    }
+
+    signIn(providerName) {
+        return new Promise((resolve, reject) => {
+
+            let provider = this.getProvider(providerName);
+
+            const pendingLink = this.getPendingCredentialLink();
+
+            // Set email provider
+            if (pendingLink) provider.setCustomParameters({ login_hint: pendingLink.email });
+
+            firebase.auth()
+                .signInWithPopup(provider)
+                .then((result) => {
+                    let credential = result.credential;
+
+                    // Get user id token
+                    result.user.getIdToken().then((idToken) => {
+                        // Validate sign in with backend
+                        this.validateSignIn({ ...credential }, idToken).then((response) => {
+
+                            // Link with credential
+                            if (pendingLink) {
+                                // result.user.linkWithCredential(pendingLink.credential);
+                                this.cleanPendingCredential();
+                            }
+
+                            resolve(response);
+                        });
+                    });
+                }).catch((error) => {
+
+                    if (error.code !== "auth/account-exists-with-different-credential") {
+                        reject('Ha ocurrido un error');
+                    }
+
+                    firebase.auth().fetchSignInMethodsForEmail(error.email).then(providers => {
+
+                        let providerName = providers[0].split(".")[0];
+                        providerName = providerName[0].toUpperCase() + providerName.slice(1);
+
+                        // Set pending credential link
+                        this.setPendingCredentialLink(error.email, error.credential);
+
+                        reject(`Anteriormente ya habías iniciado sesión con ${providerName}. Inicia sesión con ${providerName} para continuar.`);
+
+                        // if ( ! confirm(`Anteriormente ya habías iniciado sesión con ${providerName}. ¿Deseas iniciar sesión con ${providerName} para continuar?`)) {
+                        //     reject('Ha ocurrido un error');
+                        // }
+                    });
+                });
+        });
+    }
+
+    setPendingCredentialLink(email, credential) {
+        sessionStorage.setItem('social-auth-link-email', email);
+        sessionStorage.setItem('social-auth-link-credential', JSON.stringify(credential));
+    }
+
+    getPendingCredentialLink() {
+        const email = sessionStorage.getItem('social-auth-link-email');
+        const credentialString = sessionStorage.getItem('social-auth-link-credential');
+
+        if (email && credentialString) {
+            return {
+                email,
+                credential: JSON.parse(credentialString)
+            }
+        }
+
+        return null;
+    }
+
+    cleanPendingCredential() {
+        sessionStorage.removeItem('social-auth-link-email');
+        sessionStorage.removeItem('social-auth-link-credential');
+    }
+
+    /**
+     * @param credential
+     * @param idToken
+     * @return {Promise<any>}
+     */
+    validateSignIn(credential, idToken) {
+        return sendRequestAsync('socialAuthAsync', { credential, idToken });
+    }
+}

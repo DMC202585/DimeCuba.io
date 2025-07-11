@@ -1,0 +1,58 @@
+class FirebaseWebPush {
+
+    FLAG_SAVE_PUSH = 'save-push';
+
+    constructor() {}
+
+    setFlag() {
+        sessionStorage.setItem(this.FLAG_SAVE_PUSH, 'true');
+    }
+
+    getFlag() {
+        return sessionStorage.getItem(this.FLAG_SAVE_PUSH);
+    }
+
+    removeFlag() {
+        sessionStorage.removeItem(this.FLAG_SAVE_PUSH);
+    }
+
+    getPushToken(flagNeeded = false) {
+
+        return new Promise((resolve, reject) => {
+
+            if (flagNeeded) {
+
+                if ( ! this.getFlag()) {
+                    reject('Flag needed');
+                    return false;
+                }
+
+                this.removeFlag();
+            }
+
+            const messaging = firebase.messaging();
+
+            messaging.getToken({ vapidKey: 'BOCLwW0VY-m4uLhG4546awJmMSmhZRGS_aAH7la4s-1P5_mTwjYg_Y7TvOtovQg1wzaKX0W6a9k1-0DgYVkHTbc' }).then((currentToken) => {
+                if (currentToken) {
+                    // console.log(currentToken);
+                    this.sendPushTokenToServer(currentToken);
+                    resolve('Token: ' + currentToken);
+                } else {
+                    // console.log('No registration token available. Request permission to generate one.');
+                    resolve('Show permission request');
+                }
+            }).catch((err) => {
+                reject('An error occurred while retrieving token. ', err);
+                // console.log('An error occurred while retrieving token. ', err);
+            });
+        });
+    }
+
+    /**
+     * @param pushToken
+     * @return {Promise<any>}
+     */
+    sendPushTokenToServer(pushToken) {
+        return sendRequestAsync('updateWebPushTokenAsync', { pushToken }, false);
+    }
+}
