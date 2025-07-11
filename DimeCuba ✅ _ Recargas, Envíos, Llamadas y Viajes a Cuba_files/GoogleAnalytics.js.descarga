@@ -1,0 +1,273 @@
+const GA4Categories = {
+    TELECOM: 'Telecom',
+    STORE: 'Store',
+    RESTAURANTS: 'Restaurants',
+    TRAVEL: 'Travel'
+};
+
+class GoogleAnalyticsItem {
+    constructor(id = "", name = "", price = 0, quantity = 1, discount = 0, brand = GA4Categories.TELECOM, category = '', category2 = '', category3 = '', category4 = '') {
+        this.item_id = id.toString();
+        this.item_name = name.toString();
+        this.price = parseFloat(price);
+        this.quantity = parseInt(quantity);
+        this.discount = parseFloat(discount);
+        this.item_brand = brand;
+        this.item_category = category;
+        this.item_category2 = category2;
+        this.item_category3 = category3;
+        this.item_category4 = category4;
+    }
+
+    static fromValues(values) {
+        return new this(
+            values.id,
+            values.name,
+            values.price,
+            values.quantity,
+            values.discount,
+            values.brand,
+            values.category,
+            values.category2,
+            values.category3,
+            values.category4
+        );
+    }
+}
+
+class GoogleAnalytics {
+
+    env;
+    isWebview = false;
+    analyticsChannel = null;
+
+    constructor(env = 'sandbox') {
+        this.env = env;
+        // this.env = 'production';
+        if (this.env !== 'sandbox') window.dataLayer = window.dataLayer || [];
+        this.analyticsChannel = new AnalyticsChannel();
+    }
+
+    push(data) {
+        if (this.env === 'sandbox') return false;
+
+        // First try to send the app native event
+        if ( ! this.sendAppEvent(data.event, data.ecommerce)) dataLayer.push(data);
+    }
+
+    /**
+     * @param items GoogleAnalyticsItem[]
+     * @param currency string
+     * @param value float
+     */
+    view_item(items, value, currency = 'USD') {
+        this.push({ ecommerce: null });
+        this.push({
+            event: "view_item",
+            ecommerce: {
+                currency: currency,
+                value: value,
+                items: items
+            }
+        });
+    }
+
+    /**
+     * @param items GoogleAnalyticsItem[]
+     * @param currency string
+     * @param value float
+     */
+    add_to_cart(items, value, currency = 'USD') {
+        this.push({ ecommerce: null });
+        this.push({
+            event: "add_to_cart",
+            ecommerce: {
+                currency: currency,
+                value: value,
+                items: items
+            }
+        });
+    }
+
+    /**
+     * @param items GoogleAnalyticsItem[]
+     * @param currency string
+     * @param value float
+     * @param shipping
+     */
+    view_cart(items, value, shipping = 0, currency = 'USD') {
+        this.push({ ecommerce: null });
+        this.push({
+            event: "view_cart",
+            ecommerce: {
+                currency: currency,
+                value: value,
+                shipping: shipping,
+                items: items
+            }
+        });
+    }
+
+    /**
+     * @param items GoogleAnalyticsItem[]
+     * @param currency string
+     * @param value float
+     */
+    remove_from_cart(items, value, currency = 'USD') {
+        this.push({ ecommerce: null });
+        this.push({
+            event: "remove_from_cart",
+            ecommerce: {
+                currency: currency,
+                value: value,
+                items: items
+            }
+        });
+    }
+
+    /**
+     * @param items GoogleAnalyticsItem[]
+     * @param currency string
+     * @param value float
+     * @param shipping
+     */
+    begin_checkout(items, value, shipping = 0, currency = 'USD') {
+        this.push({ ecommerce: null });
+        this.push({
+            event: "begin_checkout",
+            ecommerce: {
+                currency: currency,
+                value: value,
+                shipping: shipping,
+                items: items
+            }
+        });
+    }
+
+    /**
+     * @param items GoogleAnalyticsItem[]
+     * @param currency string
+     * @param shipping_tier string
+     * @param value float
+     */
+    add_shipping_info(items, value, shipping_tier = '', currency = 'USD') {
+        this.push({ ecommerce: null });
+        this.push({
+            event: 'add_shipping_info',
+            ecommerce: {
+                shipping_tier: shipping_tier,
+                currency: currency,
+                value: value,
+                items: items
+            }
+        });
+    }
+
+    /**
+     * @param items GoogleAnalyticsItem[]
+     * @param currency string
+     * @param payment_type string
+     * @param value float
+     * @param shipping
+     */
+    add_payment_info(items, value, payment_type, shipping = 0, currency = 'USD') {
+        this.push({ ecommerce: null });
+        this.push({
+            event: "add_payment_info",
+            ecommerce: {
+                payment_type: payment_type,
+                currency: currency,
+                value: value,
+                shipping: shipping,
+                items: items
+            }
+        });
+    }
+
+    /**
+     * @param items GoogleAnalyticsItem[]
+     * @param currency string
+     * @param value float
+     * @param shipping
+     */
+    order_confirmation(items, value, shipping = 0, currency = 'USD') {
+        this.push({ ecommerce: null });
+        this.push({
+            event: "order_confirmation",
+            ecommerce: {
+                currency: currency,
+                value: value,
+                shipping: shipping,
+                items: items
+            }
+        });
+    }
+
+    /**
+     * @param items GoogleAnalyticsItem[]
+     * @param currency string
+     * @param value float
+     * @param transaction_id string
+     * @param tax float
+     * @param shipping float
+     * @param coupon string
+     */
+    purchase(items, value, transaction_id, tax = 0, shipping = 0, coupon = '', currency = 'USD') {
+        this.push({ ecommerce: null });
+        this.push({
+            event: "purchase",
+            ecommerce: {
+                transaction_id: transaction_id,
+                value: value,
+                tax: tax,
+                shipping: shipping,
+                currency: currency,
+                coupon: coupon,
+                items: items
+            }
+        });
+    }
+
+    login(user_id, dime_id, method) {
+        this.push({
+            event: "login",
+            method: method,
+            user_id: user_id,
+            dime_id: dime_id
+        });
+    }
+
+    sign_up(user_id, dime_id, method) {
+        this.push({
+            event: "sign_up",
+            method: method,
+            user_id: user_id,
+            dime_id: dime_id
+        });
+    }
+
+    sendAppEvent(name, params) {
+        if ( ! name) { return false; }
+
+        // Try to send the event through the app channel first
+        if (this.analyticsChannel.logEvent(name, params)) return true;
+
+        if (window.AnalyticsWebInterface) {
+            // Call Android interface
+            window.AnalyticsWebInterface.logEvent(name, JSON.stringify(params));
+        } else if (window.webkit
+            && window.webkit.messageHandlers
+            && window.webkit.messageHandlers.firebase) {
+            // Call iOS interface
+            window.webkit.messageHandlers.firebase.postMessage({
+                command: 'logEvent',
+                name: name,
+                parameters: params
+            });
+        } else {
+            return false;
+        }
+
+        return true;
+    }
+}
