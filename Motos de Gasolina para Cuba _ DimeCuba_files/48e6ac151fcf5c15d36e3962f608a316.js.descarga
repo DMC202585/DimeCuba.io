@@ -1,0 +1,84 @@
+if(sso){attach();function attach(){var req=$.ajax({url:'sso?command=attach',crossDomain:!0,dataType:'json'});req.done(function(data,code){if(code&&code>=400){showError(data.error);return}});req.fail(function(jqxhr){showError(jqxhr.responseJSON||jqxhr.textResponse)})}}
+function checkUserPassAsync(id,password,callback)
+{$.ajax({url:httpController+"/checkUserPassAsync",type:"POST",data:{emailPhone:id,password:password},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function setPersonAsync(person,phoneCountry,callback)
+{loading();phoneCountry=(phoneCountry==undefined?"cu":phoneCountry);$.ajax({url:httpController+"/setPersonAsync",type:"POST",data:{person:person,phoneCountry:phoneCountry,csrfRegister},success:function(msg){loading('hide');const response=$.parseJSON(msg);if(!response.status)csrfRegister=response.items.csrfRegister;callback(response)},error:function(){console.log("System failed loading information. Please try again")}})}
+function checkPromotionSessionAsync(service,callback)
+{$.ajax({url:httpController+"/checkPromotionSessionAsync",type:"POST",data:{service:service},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function checkUserHasPromotionAsync(service,callback)
+{$.ajax({url:httpController+"/checkUserHasPromotionAsync",type:"POST",data:{service:service},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function checkUserHasPromotionByCodeAsync(code,callback)
+{$.ajax({url:httpController+"/checkUserHasPromotionByCodeAsync",type:"POST",data:{code:code},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function setUserautorechargeAsync(autorecharge,callback)
+{$.ajax({url:httpController+"/setUserautorechargeAsync",type:"POST",data:{autorecharge:autorecharge},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function payWithGiftCardAsync(giftcode,balance,callback)
+{$.ajax({url:httpController+"/payWithGiftCardAsync",type:"POST",data:{giftcode:giftcode,balance:balance},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function payWithCreditCardAsync(CC,balance,context,callback)
+{$.ajax({url:httpController+"/PayWithCreditCardAsync",type:"POST",data:{CC:CC,balance:balance,context:context},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function addOrderFromShoppingCartAsync(pay_with,callback)
+{$.ajax({url:httpController+"/addOrderFromShoppingCartAsync",type:"POST",data:{pay_with:pay_with},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function addBalanceAsync(info,callback)
+{loading();$.ajax({url:httpController+"/addBalanceAsync",type:"POST",data:info,success:function(msg){loading('hide');callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function addBalanceInvitationAsync(balance,invitation_code,payment,callback)
+{loading();$.ajax({url:httpController+"/addBalanceInvitationAsync",type:"POST",data:{balance:balance,invitation_code:invitation_code,payment:payment},success:function(msg){loading('hide');callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function getGeneralAccessNumbersAsync(callback)
+{$.ajax({url:httpController+"/getGeneralAccessNumbersAsync",type:"POST",success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function searchFromContactsAsync(namePhone,callback)
+{$.ajax({url:httpController+"/searchFromContactsAsync",type:"POST",data:{namePhone:namePhone},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function addToContactsAsync(name,dob,country,province,email,number,picture,imageContent,callback)
+{loading();$.ajax({url:httpController+"/addToContactsAsync",type:"POST",data:{number:number,email:email,name:name,dob:dob,province:province,country:country,picture:picture,imageContent:imageContent},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function updateContactAsync(number,email,name,dob,province,country,contactid,picture,imageContent,callback)
+{loading();$.ajax({url:httpController+"/updateContactAsync",type:"POST",data:{number:number,email:email,name:name,dob:dob,province:province,country:country,id:contactid,picture:picture,imageContent:imageContent},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function collectGiftAsync(giftObj,pay_with,callback)
+{$.ajax({url:httpController+"/collectGiftAsync",type:"POST",data:{giftObj:giftObj},success:function(msg){callback($.parseJSON(msg),pay_with)},error:function(){console.log("System failed loading information. Please try again")}})}
+function useGiftAsync(code,callback)
+{$.ajax({url:httpController+"/useGiftAsync",type:"POST",data:{code:code},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function invitePersonByEmailAsync(contact,callback)
+{loading();$.ajax({url:httpController+"/invitePersonByEmailAsync",type:"POST",data:{contact:contact},success:function(msg){loading('hide');callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function invitePersonBySMSAsync(contact,callback)
+{loading();$.ajax({url:httpController+"/invitePersonBySMSAsync",type:"POST",data:{contact:contact},success:function(msg){loading('hide');callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function setAddressAsync(address,callback)
+{$.ajax({url:httpController+"/setAddressAsync",type:"POST",data:{address:address},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function getShippingDetailsAsync(zipcode,callback)
+{$.ajax({url:httpController+"/getShippingDetailsAsync",type:"POST",data:{zipcode:zipcode},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function getShoppingCartAsync(callback)
+{$.ajax({url:httpController+"/getShoppingCartAsync",type:"POST",data:{},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function setPhoneAsync(phone,callback)
+{$.ajax({url:httpController+"/setPhoneAsync",type:"POST",data:{phone:phone},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function setDefaultPhoneAsync(phone,callback)
+{$.ajax({url:httpController+"/setDefaultPhoneAsync",type:"POST",data:{phone:phone},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function deletePhoneAsync(phone,callback)
+{$.ajax({url:httpController+"/deletePhoneAsync",type:"POST",data:{phone:phone},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function getProvincesAsync(callback)
+{$.ajax({url:httpController+"/getProvincesAsync",type:"POST",success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function getAllCountriesAsync(callback)
+{$.ajax({url:httpController+"/getAllCountriesAsync",type:"POST",success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function getAllStatesAsync(callback)
+{$.ajax({url:httpController+"/getAllStatesAsync",type:"POST",success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function getCitiesByStateAsync(code,callback)
+{$.ajax({url:httpController+"/getCitiesByStateAsync",type:"POST",data:{code:code},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function completeChallengeAsync(id,callback)
+{$.ajax({url:httpController+"/completeChallengeAsync",type:"POST",data:{id:id},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function inviteClanAsync(friends,callback)
+{$.ajax({url:httpController+"/inviteClanAsync",type:"POST",data:{friends:friends},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function getRatesCountriesAsync(service,callback){service=(service==undefined?"LLAMADA":service);$.ajax({url:httpController+"/getRatesCountriesAsync",type:"POST",data:{service:service},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function getRatesServiceCountryAsync(service,country,callback){service=(service==undefined?"LLAMADA":service);country=(country==undefined?"CU":country);$.ajax({url:httpController+"/getRatesServiceCountryAsync",type:"POST",data:{service:service,country:country},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function prepareTopupAsync(amount,number,type,callback){$.ajax({url:httpController+"/prepareTopupAsync",type:"POST",data:{amount:amount,number:number,type:type},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function topUpAsync(payment,callback){loading();$.ajax({url:httpController+"/topUpAsync",type:"POST",data:{recharges:payment.recharges,payment:payment.payment,preventa:payment.preventa,total:payment.total,reward_type:payment.reward_type},success:function(msg){loading('hide');callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function topUpNautaAsync(payment,callback){loading();$.ajax({url:httpController+"/topUpNautaAsync",type:"POST",data:{recharges:payment.recharges,payment:payment.payment,preventa:payment.preventa,total:payment.total,reward_type:payment.reward_type},success:function(msg){loading('hide');callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function sendSMSAsync(sms,callback){$.ajax({url:httpController+"/sendSMSAsync",type:"POST",data:{sms:sms},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function getFeeAsync(balance,service,callback){$.ajax({url:httpController+"/getFeeAsync",type:"POST",data:{balance:balance,service:service},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function exchangeUSDtoCUCAsync(amount,callback){$.ajax({url:httpController+"/exchangeUSDtoCUCAsync",type:"POST",data:{amount:amount},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function getLocalAccessNumberAsync(number,callback){$.ajax({url:httpController+"/getLocalAccessNumberAsync",type:"POST",data:{number:number},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function checkEmailPhoneAsync(email,callback){$.ajax({url:httpController+"/checkEmailPhoneAsync",type:"POST",data:{emailPhone:email},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function checkEmailInvitedAsync(email,callback){$.ajax({url:httpController+"/checkEmailInvitedAsync",type:"POST",data:{email:email},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function deleteClanMemberAsync(id,callback){$.ajax({url:httpController+"/deleteClanMemberAsync",type:"POST",data:{id:id},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function getChallengesQtyAsync(callback){$.ajax({url:httpController+"/getChallengesQtyAsync",type:"POST",success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function getNotificationsAsync(callback){$.ajax({url:httpController+"/getNotificationsAsync",type:"POST",success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function markNotificationAsReadAsync(id,callback){$.ajax({url:httpController+"/markNotificationAsReadAsync",type:"POST",data:{id:id},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function addToRechargesCartAsync(to_recharge,amountCUC,to_pay,recharge_type,callback)
+{$.ajax({url:httpController+"/addToRechargesCartAsync",type:"POST",data:{to_recharge:to_recharge,amountCUC:amountCUC,to_pay:to_pay,recharge_type:recharge_type},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function getRechargesCartAsync(callback)
+{$.ajax({url:httpController+"/getRechargesCartAsync",type:"POST",data:{},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}
+function removeFromRechargesCartAsync(id,callback)
+{$.ajax({url:httpController+"/removeFromRechargesCartAsync",type:"POST",data:{id:id},success:function(msg){callback($.parseJSON(msg))},error:function(){console.log("System failed loading information. Please try again")}})}

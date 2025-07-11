@@ -1,0 +1,75 @@
+function getMarketProductHtml(product,options={showViewProductButton:!1,wishListId:null}){const oldPrice=(product.offer&&product.offer.oldPrice.amount)?product.offer.oldPrice.amount.toFixed(2):0;const price=(product.offer&&product.offer.price.amount)?product.offer.price.amount.toFixed(2):0;const discountPercentage=oldPrice>price>0?Math.ceil(100-(price)*100/oldPrice):'';const mainImagePath=product.images.primary.large?product.images.primary.large:'';const mainImageAlt=product.title?product.title:'';const inStock=product.offer&&product.offer.availability.inStock;let priceHtml='';if(price>0){priceHtml=`
+            <div class="market-product-price">
+                ${oldPrice ? `<span>$${oldPrice}</span>$${price}` : `$${price}`}
+            </div>
+        `}
+else{priceHtml=`
+            <div class="market-product-price">
+                Ver producto
+            </div>
+        `}
+const stars=getMarketProductStarRating(product.reviews.starRating,product.reviews.totalReviews);return `
+        <div class="market-product-wrapper">
+            
+            <div class="market-product market-product-${product.provider.code}" onclick="loading(); window.location.href = '${product.pageUrl}';">
+                <div class="market-product-logos">
+                    <img loading="lazy" src="https://static.dimecuba.com/images/${product.provider.code}-logo.svg" alt="Amazon"/>
+                </div>
+                
+                ${discountPercentage ? `<span class="market-product-label" style="">-${discountPercentage}%</span>` : ''}
+    
+                <div class="market-product-image" >
+                    <img loading="lazy" src="${mainImagePath}" alt="${mainImageAlt}" onerror="this.onerror=null; this.src='https://static.dimecuba.com/images/landscape-placeholder.svg';"/>
+                </div>
+    
+                <div class="market-product-info">
+                    <h3 class="market-product-title">${product.title}</h3>
+                    <div class="market-product-rating">${stars}</div>
+                    
+                    ${priceHtml}
+                    
+                    ${product.offer && product.offer.deliveryInfo.isPremiumShippingEligible ? '<img loading="lazy" src="https://static.dimecuba.com/images/amazon-prime-logo.png" alt="Amazon Prime"/>' : ''}
+                    
+                    ${options.showViewProductButton ?
+                    `<div class="market-product-actions"><button class="btn btn--sm btn--ghost">VER PRODUCTO</button></div>`
+                    : ''}
+    
+                </div>
+
+                ${product.offer && product.offer.deliveryInfo.isCompanyShippingEligible ? `<div class="market-product-promotion-label"><i class="fdc fdc-regalo"></i><p>Envío GRATIS</p></div>` : ''}
+
+            </div>
+
+            ${options.wishListId ?
+                `<div class="market-product-wl-actions"><button class="market-product-move-wl item-wish-lists" data-productid="${product.id}"><i class="fdc fdc-menuham"></i>Mover</button><button onclick="removeItemFromWishList(${product.id}, ${options.wishListId})" class="market-product-delete-wl"><i class="fdc fdc-eliminar03"></i>Eliminar</button></div>`
+            : ''}
+
+        </div>
+    `}
+function getMarketProductStarRating(average,totalReviews=1){if(average==0||average==null){return ``}else{let starsHTML='<ul class="rating">';for(let i=1;i<=5;i++){if(average>=i){starsHTML+='<li class="fdc fdc-estrellafill"></li>'}else if(average>=i-0.5){starsHTML+='<li class="fdc fdc-estrellahalf"></li>'}else{starsHTML+='<li class="fdc fdc-estrella"></li>'}}
+starsHTML+='</ul>';starsHTML+=`<span>(${totalReviews})</span>`;return starsHTML}}
+function addMarketProductToCart(productId,quantity=1,shippingTypeId=null,sizeId=null){return new Promise((resolve,reject)=>{addMarketProductToCartAsync(productId,quantity,shippingTypeId,sizeId).then((items)=>{getShoppingCart();resolve(items)}).catch((error)=>{console.log('addMarketProductToCart error',error);flashMessage(error,'error');reject(error)})})}
+function addMarketProductToCartAsync(productId,quantity=1,shippingTypeId=null,sizeId=null){return new Promise((resolve,reject)=>{sendRequestAsync('addMarketProductToCartAsync',{productId,quantity,shippingTypeId,sizeId},!0).then((result)=>{if(result.status){resolve(result.items)}
+else{reject(result.message)}}).catch((error)=>{reject(error)})})}
+function updateMarketProductInCart(cartItemId,quantity){return new Promise((resolve,reject)=>{sendRequestAsync('updateMarketProductInCartAsync',{cartItemId,quantity},!0).then((result)=>{if(result.status){resolve(result.items)}
+else{reject(result.message)}}).catch((error)=>{reject(error)})})}
+function setMarketSelectorImage(state){if(!state.id){return state.text}
+var $state=$('<span><img src="'+$(state.element).data('image')+'" class="img-flag" /></span>');return $state}
+function setMarketFormatState(state){if(!state.id)return state.text;const imageSrc=$(state.element).data('image');const value=state.id;return $(`<span><img src="${imageSrc}" class="img-flag" style="${value === 'amazon' ? 'height: 20px; margin-top: 5px' : ''}" /></span>`)}
+function getMarketTopPurchasedProducts(section){const storeSwiper=new StoreSwiper(section);storeSwiper.renderMarketSwiperContainer();storeSwiper.showSwiperSkeletonResults();sendRequestAsync('getMarketTopPurchasedProductsAsync',{},!1).then((result)=>{storeSwiper.hideSwiperSkeletonResults();if(result.status){storeSwiper.renderSwiperProductList(result.items);insiderWrapper.setListingObject(result.insiderListingObject)}
+else flashMessage('Lo sentimos, ha ocurrido un error, por favor, vuelve a intentarlo','error')}).catch((error)=>{flashMessage('Lo sentimos, ha ocurrido un error, por favor, vuelve a intentarlo','error');storeSwiper.hideSwiperSkeletonResults()})}
+function getMarketFreeShippingProducts(section){const storeSwiper=new StoreSwiper(section);storeSwiper.renderMarketSwiperContainer();storeSwiper.showSwiperSkeletonResults();sendRequestAsync('getMarketFreeShippingProductsAsync',{},!1).then((result)=>{storeSwiper.hideSwiperSkeletonResults();if(result.status){if(result.items.length>0){storeSwiper.renderSwiperProductList(result.items);insiderWrapper.setListingObject(result.insiderListingObject)}
+else $(`#${section}Wrapper`).hide()}
+else flashMessage('Lo sentimos, ha ocurrido un error, por favor, vuelve a intentarlo','error')}).catch((error)=>{flashMessage('Lo sentimos, ha ocurrido un error, por favor, vuelve a intentarlo','error');storeSwiper.hideSwiperSkeletonResults()})}
+function addItemToWishListAsync(productId,wishListId=null){return new Promise((resolve,reject)=>{sendRequestAsync('addItemToWishListAsync',{productId,wishListId},!0).then((result)=>{if(result.status)resolve(result.items);else reject(result.message)}).catch((error)=>{reject(error)})})}
+function removeItemFromWishListAsync(productId,wishListId){return new Promise((resolve,reject)=>{sendRequestAsync('removeItemFromWishListAsync',{productId,wishListId},!0).then((result)=>{if(result.status)resolve(result.items);else reject(result.message)}).catch((error)=>{reject(error)})})}
+function updateItemInWishListAsync(productId,action='add',wishListId=null){return new Promise((resolve,reject)=>{sendRequestAsync('updateItemInWishListAsync',{productId,action,wishListId},!0).then((result)=>{if(result.status)resolve(result.items);else reject(result.message)}).catch((error)=>{reject(error)})})}
+function marketManageWishListAsync(wishListId,name,visibility){return new Promise((resolve,reject)=>{sendRequestAsync('marketManageWishListAsync',{wishListId,name,visibility},!0).then((result)=>{if(result.status)resolve(result.items);else reject(result.message)}).catch((error)=>{reject(error)})})}
+function marketRemoveWishListAsync(wishListId){return new Promise((resolve,reject)=>{sendRequestAsync('marketRemoveWishListAsync',{wishListId},!0).then((result)=>{if(result.status)resolve(result.items);else reject(result.message)}).catch((error)=>{reject(error)})})}
+function getMarketWishListsByUserAndProductCheckAsync(productId){return new Promise((resolve,reject)=>{sendRequestAsync('getMarketWishListsByUserAndProductCheckAsync',{productId},!0).then((result)=>{if(result.status)resolve(result.items);else reject(result.message)}).catch((error)=>{reject(error)})})}
+function updateMarketWishListsProductAsync(wishLists,productId){return new Promise((resolve,reject)=>{sendRequestAsync('updateMarketWishListsProductAsync',{wishLists,productId},!0).then((result)=>{if(result.status)resolve(result.items);else reject(result.message)}).catch((error)=>{reject(error)})})}
+function checkMarketSharedWishListCodeAsync(shareCode){return new Promise((resolve,reject)=>{sendRequestAsync('checkMarketSharedWishListCodeAsync',{shareCode},!0).then((result)=>{if(result.status)resolve(result.items);else reject(result.message)}).catch((error)=>{reject(error)})})}
+function acceptMarketSharedWishListCodeAsync(shareCode){return new Promise((resolve,reject)=>{sendRequestAsync('acceptMarketSharedWishListCodeAsync',{shareCode},!0).then((result)=>{if(result.status)resolve(result.items);else reject(result.message)}).catch((error)=>{reject(error)})})}
+function getMarketUsersListFromWishListAsync(wishListId){return new Promise((resolve,reject)=>{sendRequestAsync('getMarketUsersListFromWishListAsync',{wishListId},!0).then((result)=>{if(result.status)resolve(result.items);else reject(result.message)}).catch((error)=>{reject(error)})})}
+function removeMarketUserFromWishListAsync(wishListId,userId){return new Promise((resolve,reject)=>{sendRequestAsync('removeMarketUserFromWishListAsync',{wishListId,userId},!0).then((result)=>{if(result.status)resolve(result.items);else reject(result.message)}).catch((error)=>{reject(error)})})}
+function getMarketHistoryListFromWishListAsync(wishListId){return new Promise((resolve,reject)=>{sendRequestAsync('getMarketHistoryListFromWishListAsync',{wishListId},!0).then((result)=>{if(result.status)resolve(result.items);else reject(result.message)}).catch((error)=>{reject(error)})})}

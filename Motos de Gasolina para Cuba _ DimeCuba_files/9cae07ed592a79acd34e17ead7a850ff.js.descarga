@@ -1,0 +1,64 @@
+function getStoreProducts(page=1){let filters={};if(page>1)window.history.pushState({},'',`?page=${page}`);else window.history.pushState({},'',window.location.pathname);sendRequestAsync('getStoreProductsPaginationAsync',{filters:productsFilter,page,productSection:typeof productSection!=='undefined'?productSection:''},!0).then((result)=>{if(result.status){productList=result.items;if(page===1&&productList.length===0){$('#marketsResultsEmpty').show();$('#marketsResultsEmptyText').html(result.message);$('#marketsResultsContainer').hide();return}
+if(productList.length>0){renderProductList();if(result.pagination)renderPagination(page,result.pagination.totalPages);if(result.insiderListingObject)insiderWrapper.setListingObject(result.insiderListingObject)}}else flashMessage('Lo sentimos, ha ocurrido un error, por favor, vuelve a intentarlo','error')}).catch((error)=>{flashMessage('Lo sentimos, ha ocurrido un error, por favor, vuelve a intentarlo','error')})}
+function renderProductList(){const productsList=$('#productsList');productsList.empty();productList.forEach((product)=>{$('#productsList').append(getProductHtml(product))})}
+function getProductHtml(product){const listingPrice=(product.price!=product.realPrice)?product.realPrice:product.price;const priceOld=product.price>product.realPrice&&product.price>0&&product.commentAverage!=0?product.price.toFixed(2):'';const realPrice=product.realPrice.toFixed(2);const discountPercentage=product.price>product.realPrice&&product.price>0?Math.ceil(100-(product.realPrice)*100/product.price):'';const mainImagePath=product.mainImage?product.mainImage.path:'';const mainImageAlt=product.mainImage?product.mainImage.alt:'';const stars=getStarRating(product.commentAverage);const maxQuantity=Math.min(product.physicalQuantity??99,product.usableQuantity??99,product.max_quantity??99);const availability=Math.min(product.physicalQuantity??99,product.usableQuantity??99);const productUrl=`/envios/producto/${product.shortCode}`;const promoDiscount=product.promoInfo?product.promoDiscount.toFixed(2):'';const promoInfoDesc=product.promoInfo?product.promoInfo.desc:'';return `
+        <div class="market-product" data-listing-price="${listingPrice}" data-listing-sold="${product.sold}">
+            <input type="hidden" class="shippingProvincesIds" value="${product.shippingProvinces}">
+            <input type="hidden" class="parentCategoriesIds" value="${product.parentCategoriesIds}">
+            <input type="hidden" class="shippingCU" value="${product.isShippingCu ? 1 : 0}">
+            <input type="hidden" class="shippingUS" value="${product.isShippingUs ? 1 : 0}">
+ 
+            ${discountPercentage ? `<span class="market-product-label" style="">${discountPercentage}%Off</span>` : ''}
+
+            <div class="market-product-image" onclick="window.location.href = '${productUrl}';">
+                <img loading="lazy" src="${mainImagePath}" alt="${mainImageAlt}" onerror="this.onerror=null; this.src='https://static.dimecuba.com/images/landscape-placeholder.svg';"/>
+                ${product.provider === "22" || product.provider === "50" ? '<div class="logo-overlapping"></div>' : ''}
+                ${product.promoInfo ? `<div class="product-p-label" data-toggle="tooltip" title="${promoInfoDesc}"><i class="promo-icon"></i><span>-$${promoDiscount}</span></div>` : ''}
+            </div>
+
+            <div class="market-product-info">
+                <a href="${productUrl}"><h3 class="market-product-title">${product.title}</h3></a>
+                <div class="market-product-rating">${stars}</div>
+                
+                <div class="market-product-price">
+                    ${priceOld ? `<span>$${priceOld}</span>$${realPrice}` : `$${realPrice}`}
+                </div>
+
+                <div class="market-product-actions">
+                    <input class="form-control quantity-c" name="quantityCart-${product.productId}" id="quantityCart-${product.productId}" type="number" pattern="\\d*" min="1" step="1" value="1" max="${maxQuantity}" onkeypress="return isNumberKey(event)" maxlength="2"/>
+                    <button class="btn btn--sm btn--ghost addToCart" id="addToCart-${product.productId}" name="addToCart-${product.productId}" data-price="${product.realPrice}" data-name="${product.title}" data-category="${product.categoryName}" data-physicalquantity ="${availability}">AÑADIR</button>
+                </div>
+            </div>
+            
+        </div>
+    `}
+function getStarRating(average){if(average==0||average==null){return ``}else{let starsHTML='<ul class="rating">';for(let i=1;i<=5;i++){if(average>=i){starsHTML+='<li class="fdc fdc-estrellafill"></li>'}else if(average>=i-0.5){starsHTML+='<li class="fdc fdc-estrellahalf"></li>'}else{starsHTML+='<li class="fdc fdc-estrella"></li>'}}
+starsHTML+='</ul>';starsHTML+=`<span>(${average})</span>`;return starsHTML}}
+function renderPagination(page,totalPages){const pagination=$("#productPagination");pagination.empty();page=parseInt(page);let startPage=Math.max(1,page-2);let endPage=Math.min(totalPages,page+2);if(page-2<1){endPage=Math.min(totalPages,startPage+4)}else if(page+2>totalPages){startPage=Math.max(1,endPage-4)}
+if(page>1){pagination.append(`<li><a href="javascript:void(0);" onclick="getStoreProducts(${page - 1});">‹</a></li>`)}
+for(let i=startPage;i<=endPage;i++){if(page===i){pagination.append(`<li class="active"><a href="javascript:void(0);">${i}</a></li>`)}else{pagination.append(`<li><a href="javascript:void(0);" onclick="getStoreProducts(${i});">${i}</a></li>`)}}
+if(page<totalPages){pagination.append(`<li><a href="javascript:void(0);" onclick="getStoreProducts(${page + 1});">›</a></li>`)}}
+function getFeaturedProductsByCategory(){const loading=$('#featuredProductsByCategoryLoading');loading.show();sendRequestAsync('getStoreFeaturedProductsByCategoryAsync',{},!1).then((result)=>{loading.hide();if(result.status){renderFeaturedProductsByCategory(result.items);insiderWrapper.addListingObject(result.insiderListingObject)}}).catch((error)=>{})}
+function renderFeaturedProductsByCategory(featuredProducts){const productsList=$('#featuredProductsByCategoryList');let html=getProductsByCategoryHtml(featuredProducts);productsList.empty().append(html)}
+function getProductsByCategoryHtml(featuredProducts){let html='';if(featuredProducts===null||featuredProducts.length===0)return html;featuredProducts.forEach((catProducts)=>{const category=catProducts.category;const products=catProducts.products;const href=category.href?category.href:`/envios/categoria/${category.shortCode}`;const subTitle=category.subTitle?category.subTitle:'Productos destacados';let categoryHtml=`
+          <div class="store-stn">
+              <div class="store-stn-h">
+                  <div class="store-stn-h-i">
+                      <h2 class="store-stn-h-t">${category.title}</h2>
+                      <p class="store-stn-h-txt">${subTitle}</p>
+                      <a class="store-stn-h-a" href="${href}">< Ver todo ></a>
+                  </div>
+                  ${
+            category.centerImage ? `<img class="store-stn-h-img center" src="${category.centerImage.path}"/>` :
+                `${category.leftImage?`<img class="store-stn-h-img left" src="${category.leftImage.path}"/>`:''}
+${category.rightImage?`<img class="store-stn-h-img right" src="${category.rightImage.path}"/>`:''}`
+        }
+              </div>
+              <div class="ctn">
+                  <div class="market-product-list">
+                      ${products.map(product => getProductHtml(product)).join('')}
+                  </div>
+              </div>
+              <a style="text-align: center;font-size: 0.8em;" class="store-stn-h-a" href="${href}">< Ver todo ></a>
+          </div>
+        `;html+=categoryHtml});return html}
